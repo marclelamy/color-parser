@@ -58,7 +58,9 @@ export function rgbToHex(r: number, g: number, b: number): string {
  * returns h, s, and l in the set [0, 360], [0, 100], [0, 100].
  */
 export function rgbToHsl(r: number, g: number, b: number): { h: number; s: number; l: number } {
-    r /= 255, g /= 255, b /= 255;
+    r /= 255;
+    g /= 255;
+    b /= 255;
     const max = Math.max(r, g, b), min = Math.min(r, g, b);
     let h = 0, s = 0, l = (max + min) / 2;
 

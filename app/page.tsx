@@ -7,7 +7,6 @@ import {
     hslToRgb,
     rgbToHex,
     rgbToHsl,
-    hexToRgb,
     parseRgbString,
     parseHexString,
     type RGBColor
