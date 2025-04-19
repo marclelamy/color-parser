@@ -1,0 +1,1 @@
+Add an option to suggest 1/2/3/4/... colors with same saturation and luminosity

@@ -1,103 +1,115 @@
-import Image from "next/image";
+'use client';
+
+import React, { useState, useCallback } from 'react';
+import ColorPanel from '@/components/ColorPanel';
+import { parseHslString, type HSLColor } from '@/lib/hslParser';
+import {
+    hslToRgb,
+    rgbToHex,
+    rgbToHsl,
+    hexToRgb,
+    parseRgbString,
+    parseHexString,
+    type RGBColor
+} from '@/lib/colorUtils';
+
+interface ColorPanelState {
+    id: string;
+    rawInput: string;
+    hsl: HSLColor | null;
+    rgb: RGBColor | null;
+    hex: string | null;
+}
+
+function calculateColorFormats(rawInput: string): Pick<ColorPanelState, 'hsl' | 'rgb' | 'hex'> {
+    let hsl: HSLColor | null = null;
+    let rgb: RGBColor | null = null;
+    let hex: string | null = null;
+
+    const trimmedInput = rawInput.trim();
+
+    // Try parsing as HSL
+    hsl = parseHslString(trimmedInput);
+    if (hsl) {
+        rgb = hslToRgb(hsl.h, hsl.s, hsl.l);
+        hex = rgbToHex(rgb.r, rgb.g, rgb.b);
+        return { hsl, rgb, hex };
+    }
+
+    // Try parsing as RGB
+    rgb = parseRgbString(trimmedInput);
+    if (rgb) {
+        hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+        hex = rgbToHex(rgb.r, rgb.g, rgb.b);
+        return { hsl, rgb, hex };
+    }
+
+    // Try parsing as Hex
+    rgb = parseHexString(trimmedInput);
+    if (rgb) {
+        hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+        hex = rgbToHex(rgb.r, rgb.g, rgb.b); // Or directly from input if needed: parseHexString returns RGB
+        return { hsl, rgb, hex };
+    }
+
+    // If none match
+    return { hsl: null, rgb: null, hex: null };
+}
+
+const initialRawInput = '--foreground: 60 9.1% 97.8%;';
+const initialFormats = calculateColorFormats(initialRawInput);
+const initialPanelState: ColorPanelState = {
+    id: crypto.randomUUID(),
+    rawInput: initialRawInput,
+    ...initialFormats,
+};
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    const [colorPanels, setColorPanels] = useState<ColorPanelState[]>([initialPanelState]);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    const handleInputChange = useCallback((id: string, newValue: string) => {
+        const formats = calculateColorFormats(newValue);
+        setColorPanels(currentPanels =>
+            currentPanels.map(panel =>
+                panel.id === id
+                    ? { ...panel, rawInput: newValue, ...formats }
+                    : panel
+            )
+        );
+    }, []);
+
+    const handleAddPanel = useCallback(() => {
+        const newPanel: ColorPanelState = {
+            id: crypto.randomUUID(),
+            rawInput: '',
+            hsl: null,
+            rgb: null,
+            hex: null,
+        };
+        setColorPanels(currentPanels => [...currentPanels, newPanel]);
+    }, []);
+
+    return (
+        <div className="relative min-h-screen w-full">
+            <button
+                onClick={handleAddPanel}
+                className="absolute top-2 right-2 z-10 h-10 w-10 flex items-center justify-center rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground text-lg"
+            >
+                +
+            </button>
+            <div className="flex flex-row w-full min-h-screen">
+                {colorPanels.map(panel => (
+                    <ColorPanel
+                        key={panel.id}
+                        id={panel.id}
+                        rawInput={panel.rawInput}
+                        hsl={panel.hsl}
+                        rgb={panel.rgb}
+                        hex={panel.hex}
+                        onInputChange={handleInputChange}
+                    />
+                ))}
+            </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+    );
 }
