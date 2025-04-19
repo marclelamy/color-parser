@@ -11,6 +11,7 @@ import {
     parseHexString,
     type RGBColor
 } from '@/lib/colorUtils';
+import { Plus } from 'lucide-react';
 
 interface ColorPanelState {
     id: string;
@@ -94,7 +95,7 @@ export default function Home() {
                 onClick={handleAddPanel}
                 className="absolute top-2 right-2 z-10 h-10 w-10 flex items-center justify-center rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground text-lg"
             >
-                +
+                <Plus className="h-4 w-4" />
             </button>
             <div className="flex flex-row w-full min-h-screen">
                 {colorPanels.map(panel => (
