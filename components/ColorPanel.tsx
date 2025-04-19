@@ -61,7 +61,7 @@ const ColorPanel: React.FC<ColorPanelProps> = ({
 
     return (
         <div
-            className={`flex flex-col w-full h-screen p-4 border-r border-border ${textColorClass}`}
+            className={`flex flex-col w-full h-screen p-4 border-border ${textColorClass}`}
             style={panelStyle}
         >
             <input
