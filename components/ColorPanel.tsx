@@ -51,8 +51,8 @@ export function ColorPanel({
     const formatHslString = (c: ParsedColor['color']): string => {
         if (!c) return '-'
         const hsl = c.toHsl()
-        return `hsl(${hsl.h.toFixed(1)}, ${hsl.s.toFixed(1)}%, ${hsl.l.toFixed(
-            1
+        return `hsl(${hsl.h.toFixed(0)}, ${hsl.s.toFixed(0)}%, ${hsl.l.toFixed(
+            0
         )}%)`
     }
     const formatRgbString = (c: ParsedColor['color']): string => {
