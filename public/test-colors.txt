@@ -1,0 +1,67 @@
+/* CSS Custom Properties with various formats */
+:root {
+  --primary: 20 14.3% 4.1%;
+  --secondary: 210 40% 60%;
+  --accent: 350 80% 70%;
+  --background: 0 0% 100%;
+  --foreground: 20 14.3% 4.1%;
+  --card: 0 0% 100%;
+  --card-foreground: 20 14.3% 4.1%;
+  --popover: 0 0% 100%;
+  --muted: 210 40% 98%;
+  --destructive: 0 84.2% 60.2%;
+}
+
+/* Hex Colors - Various lengths */
+#FF6B6B #4ECDC4 #45B7D1 #96CEB4 #FFEAA7 #E74C3C #3498DB #2ECC71 #F39C12 #9B59B6
+#fff #000 #f0f #abc #123 #fed #a1b2c3 #ff0000ff #00ff0080 #0000ff33
+
+/* RGB and RGBA Values */
+rgb(255, 107, 107) rgb(78, 205, 196) rgb(69, 183, 209) rgb(150, 206, 180) rgb(255, 234, 167)
+rgba(231, 76, 60, 0.8) rgba(52, 152, 219, 0.6) rgba(46, 204, 113, 1.0) rgba(243, 156, 18, 0.4)
+rgb(255 255 255) rgb(0 0 0 / 0.5) rgba(255, 0, 0, 50%) rgb(100% 50% 25%)
+
+/* HSL and HSLA Values */
+hsl(0, 100%, 50%) hsl(120, 100%, 50%) hsl(240, 100%, 50%) hsl(60, 100%, 75%)
+hsla(0, 100%, 50%, 0.8) hsla(180, 50%, 60%, 0.6) hsla(300, 80%, 70%, 1.0)
+hsl(210deg 40% 60%) hsl(0.5turn 50% 50%) hsl(3.14159rad 60% 70%)
+
+/* OKLCH Values */
+oklch(0.646 0.222 41.116) oklch(0.6 0.118 184.704) oklch(0.398 0.07 227.392)
+oklch(0.828 0.189 84.429) oklch(0.769 0.188 70.08) oklch(1 0 0) oklch(0.145 0 0)
+oklch(0.577 0.245 27.325) oklch(0.704 0.191 22.216)
+
+/* CMYK Values */
+cmyk(0%, 100%, 100%, 0%) cmyk(100%, 0%, 100%, 0%) cmyk(100%, 100%, 0%, 0%)
+cmyk(0, 0, 0, 0) cmyk(50%, 25%, 75%, 10%) cmyk(85, 15, 100, 5)
+device-cmyk(0% 81% 81% 30%) device-cmyk(70% 0% 56% 0%)
+
+/* Named Colors */
+red blue green yellow orange purple pink brown black white gray grey
+crimson darkblue lightgreen gold magenta cyan lime navy maroon teal
+transparent currentColor inherit initial unset
+
+/* LAB and LCH Values */
+lab(50% 20 -30) lab(70% -45 36) lab(25% 0 0) lab(90% 5 -10)
+lch(50% 35 120) lch(70% 45 180) lch(25% 0 0) lch(90% 10 270)
+
+/* Additional edge cases and variations */
+color(srgb 1 0.5 0) color(display-p3 0.8 0.4 0.6) color(rec2020 0.7 0.3 0.9)
+hwb(120 20% 30%) hwb(240deg 10% 40%) hwb(0.33turn 25% 15%)
+
+/* Mixed in realistic CSS context */
+.component {
+  background: linear-gradient(45deg, #ff6b6b 0%, rgba(78, 205, 196, 0.8) 50%, hsl(210, 40%, 60%) 100%);
+  border: 2px solid oklch(0.646 0.222 41.116);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), inset 0 1px 0 hsla(0, 0%, 100%, 0.2);
+  color: cmyk(0%, 100%, 100%, 0%);
+  text-shadow: 1px 1px 2px #000000aa;
+}
+
+/* Color functions with calculations */
+rgb(calc(255 * 0.8) 107 107) hsl(calc(360deg / 3) 100% 50%)
+oklch(calc(0.5 + 0.1) 0.2 45deg) rgba(255, calc(100 + 50), 0, var(--opacity))
+
+/* Unusual but valid formats */
+#RGB #rgba #RRGGBB #rrggbbaa
+hsl(270 60% 70% / 80%) rgb(255 128 0 / 0.5) oklch(0.7 0.15 180 / 90%) 
