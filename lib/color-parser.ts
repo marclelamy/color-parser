@@ -37,7 +37,7 @@ export function parseColorLine(line: string): Omit<ParsedColor, 'id'> {
     if (value) {
         try {
             color = new Color(value)
-        } catch (e) {
+        } catch {
             const hsl = attemptToParseUnwrappedHsl(value)
             if (hsl) {
                 try {

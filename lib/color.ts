@@ -1,10 +1,3 @@
-import {
-    COLOR_PATTERNS,
-    NAMED_COLORS
-} from './color-patterns';
-import * as T from './color-types';
-
-
 const NAMED_COLOR_MAP: Record<string, string> = {
     "aliceblue": "#f0f8ff",
     "antiquewhite": "#faebd7",
@@ -167,7 +160,7 @@ export class Color {
         if (typeof value === 'string') {
             this.parseColorString(value);
         } else if (typeof value === 'object' && value !== null) {
-            this.parseColorObject(value as any);
+            this.parseColorObject(value as Record<string, number>);
         } else {
             throw new Error('Invalid color value');
         }
@@ -210,7 +203,7 @@ export class Color {
         }
     }
 
-    private parseColorObject(obj: any): void {
+    private parseColorObject(obj: Record<string, number>): void {
         if ('r' in obj && 'g' in obj && 'b' in obj) {
             this._r = obj.r;
             this._g = obj.g;
@@ -281,7 +274,8 @@ export class Color {
 
         const max = Math.max(r, g, b);
         const min = Math.min(r, g, b);
-        let h = 0, s = 0, l = (max + min) / 2;
+        let h = 0, s = 0;
+        const l = (max + min) / 2;
 
         if (max !== min) {
             const d = max - min;

@@ -1,4 +1,4 @@
-import { COLOR_PATTERNS, COMPONENT_PATTERNS, ColorToken, TokenType } from './color-patterns';
+import { COLOR_PATTERNS, ColorToken, TokenType } from './color-patterns';
 
 export class ColorTokenizer {
     private text: string;

@@ -96,34 +96,22 @@ export function ColorPanel({
             0
         )}%)`
     }
-    const formatHslaString = (c: ParsedColor['color']): string => {
-        if (!c) return '-'
-        const hsl = c.toHsl()
-        const a = c.rgba.a;
-        return `hsla(${hsl.h.toFixed(0)}, ${hsl.s.toFixed(0)}%, ${hsl.l.toFixed(0)}, ${a.toFixed(2)})`
-    }
     const formatRgbString = (c: ParsedColor['color']): string => {
         if (!c) return '-'
         const rgb = c.toRgb()
         return `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`
-    }
-    const formatRgbaString = (c: ParsedColor['color']): string => {
-        if (!c) return '-'
-        return c.toRgbaString();
     }
     const formatHexString = (c: ParsedColor['color']): string =>
         c ? c.toHex() : '-'
     
     const formatCmykString = (c: ParsedColor['color']): string => {
         if (!c) return '-'
-        // @ts-ignore
         const cmyk = c.toCmyk()
         return `cmyk(${cmyk.c.toFixed(0)}%, ${cmyk.m.toFixed(0)}%, ${cmyk.y.toFixed(0)}%, ${cmyk.k.toFixed(0)}%)`
     }
 
     const formatOklchString = (c: ParsedColor['color']): string => {
         if (!c) return '-'
-        // @ts-ignore
         const oklch = c.toOklch()
         return `oklch(${oklch.l.toFixed(2)}, ${oklch.c.toFixed(2)}, ${oklch.h.toFixed(2)})`
     }

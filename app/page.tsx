@@ -2,11 +2,11 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import { ColorPanel } from '@/components/ColorPanel'
-import { parseColorLine, ParsedColor } from '@/lib/color-parser'
+import { parseColorLine } from '@/lib/color-parser'
 import { ColorTokenizer } from '@/lib/color-tokenizer'
 import { ColorToken } from '@/lib/color-patterns'
 import { Button } from '@/components/ui/button'
-import { Plus, RotateCcw, Layers } from 'lucide-react'
+import { Plus, RotateCcw } from 'lucide-react'
 import { v4 as uuidv4 } from 'uuid'
 import { ResponsiveDialog } from '@/components/ui/responsive-dialog'
 import { Label } from '@/components/ui/label'
@@ -29,25 +29,6 @@ const initialPanel: ColorPanelState = {
 
 export default function Home() {
     const [colorPanels, setColorPanels] = useState<ColorPanelState[]>([initialPanel])
-
-    useEffect(() => {
-        async function readClipboard() {
-            try {
-                if (navigator.clipboard && navigator.clipboard.readText) {
-                    const clipboardText = await navigator.clipboard.readText()
-                    if (clipboardText.trim()) {
-                        // Use parseAndAddPanels to handle multiple colors
-                        parseAndAddPanels(clipboardText.trim(), true) // Replace existing
-                    }
-                }
-            } catch (error) {
-                console.log('Could not read clipboard:', error)
-            }
-        }
-
-        readClipboard()
-    }, [])
-
 
     const parseAndAddPanels = useCallback((input: string, replaceExisting: boolean = false) => {
         const tokenizer = new ColorTokenizer(input)
@@ -89,6 +70,24 @@ export default function Home() {
             setColorPanels(prev => [...prev, ...newPanels])
         }
     }, [])
+
+    useEffect(() => {
+        async function readClipboard() {
+            try {
+                if (navigator.clipboard && navigator.clipboard.readText) {
+                    const clipboardText = await navigator.clipboard.readText()
+                    if (clipboardText.trim()) {
+                        // Use parseAndAddPanels to handle multiple colors
+                        parseAndAddPanels(clipboardText.trim(), true) // Replace existing
+                    }
+                }
+            } catch (error) {
+                console.log('Could not read clipboard:', error)
+            }
+        }
+
+        readClipboard()
+    }, [parseAndAddPanels])
 
 
     const handleInputChange = useCallback((id: string, newValue: string) => {
@@ -257,7 +256,7 @@ function ExportColorsDialog({ colorPanels }: { colorPanels: ColorPanelState[] })
                 case 'rgba':
                     return parsed.color.toRgbaString()
                 case 'hsla':
-                    // @ts-ignore
+                    // @ts-expect-error - toHslaString is not implemented yet
                     return parsed.color.toHslaString()
                 case 'hex':
                     return parsed.color.toHex()

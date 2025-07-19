@@ -8,12 +8,25 @@ import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
+interface TestScenario {
+    name: string;
+    input: string;
+    description: string;
+}
+
+interface TestResult extends TestScenario {
+    tokenCount: number;
+    tokens: ColorToken[];
+    issues: string[];
+}
+
+
 export default function TestPage() {
     const [inputValue, setInputValue] = useState<string>('')
     const [parsedColors, setParsedColors] = useState<ParsedColor[]>([])
     const [tokens, setTokens] = useState<ColorToken[]>([])
     const [showTokens, setShowTokens] = useState(false)
-    const [testResults, setTestResults] = useState<any[]>([])
+    const [testResults, setTestResults] = useState<TestResult[]>([])
     const [showTestResults, setShowTestResults] = useState(false)
 
     const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -130,7 +143,7 @@ export default function TestPage() {
         }
     ]
 
-    const runTestScenario = (scenario: any) => {
+    const runTestScenario = (scenario: TestScenario) => {
         setInputValue(scenario.input)
         
         // Parse with tokenizer
@@ -330,7 +343,7 @@ export default function TestPage() {
                                     )}
                                     
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-                                        {result.tokens.map((token: any, i: number) => (
+                                        {result.tokens.map((token: ColorToken, i: number) => (
                                             <div key={i} className="bg-muted p-2 rounded">
                                                 <span className="font-mono">[{token.type}] {token.raw}</span>
                                             </div>

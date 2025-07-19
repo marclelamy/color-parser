@@ -99,7 +99,7 @@ export interface CalculatedColor extends ColorBase {
     type: 'calculated';
     expression: string;
     variables: string[]; // CSS variables found in expression
-    calculatedValue?: any; // result after evaluation
+    calculatedValue?: string | number | null; // result after evaluation
 }
 
 // Union type for all color types
