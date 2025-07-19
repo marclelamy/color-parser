@@ -197,6 +197,17 @@ export class Color {
             this._a = match[4] ? parseFloat(match[4]) : 1;
             return;
         }
+
+        // hsl / hsla
+        match = v.match(/hsla?\s*\(\s*([\d\.]+)\s*,?\s*([\d\.]+)%?\s*,?\s*([\d\.]+)%?\s*,?\s*([\d\.]+)?\s*\)/);
+        if (match) {
+            const h = parseFloat(match[1]);
+            const s = parseFloat(match[2]);
+            const l = parseFloat(match[3]);
+            const a = match[4] ? parseFloat(match[4]) : 1;
+            this.fromHsl(h, s, l, a);
+            return;
+        }
     }
 
     private parseColorObject(obj: any): void {
@@ -206,26 +217,7 @@ export class Color {
             this._b = obj.b;
             this._a = obj.a ?? 1;
         } else if ('h' in obj && 's' in obj && 'l' in obj) {
-            // HSL to RGB conversion
-            const { h, s, l } = obj;
-            const sNorm = s / 100;
-            const lNorm = l / 100;
-            const c = (1 - Math.abs(2 * lNorm - 1)) * sNorm;
-            const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
-            const m = lNorm - c / 2;
-            let r = 0, g = 0, b = 0;
-
-            if (h >= 0 && h < 60) { [r, g, b] = [c, x, 0]; }
-            else if (h >= 60 && h < 120) { [r, g, b] = [x, c, 0]; }
-            else if (h >= 120 && h < 180) { [r, g, b] = [0, c, x]; }
-            else if (h >= 180 && h < 240) { [r, g, b] = [0, x, c]; }
-            else if (h >= 240 && h < 300) { [r, g, b] = [x, 0, c]; }
-            else if (h >= 300 && h < 360) { [r, g, b] = [c, 0, x]; }
-
-            this._r = Math.round((r + m) * 255);
-            this._g = Math.round((g + m) * 255);
-            this._b = Math.round((b + m) * 255);
-            this._a = obj.a ?? 1;
+            this.fromHsl(obj.h, obj.s, obj.l, obj.a);
         }
     }
 
@@ -238,6 +230,27 @@ export class Color {
         this._g = parseInt(h.substring(2, 4), 16);
         this._b = parseInt(h.substring(4, 6), 16);
         this._a = h.length === 8 ? parseInt(h.substring(6, 8), 16) / 255 : 1;
+    }
+
+    private fromHsl(h: number, s: number, l: number, a: number = 1): void {
+        const sNorm = s / 100;
+        const lNorm = l / 100;
+        const c = (1 - Math.abs(2 * lNorm - 1)) * sNorm;
+        const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+        const m = lNorm - c / 2;
+        let r = 0, g = 0, b = 0;
+
+        if (h >= 0 && h < 60) { [r, g, b] = [c, x, 0]; }
+        else if (h >= 60 && h < 120) { [r, g, b] = [x, c, 0]; }
+        else if (h >= 120 && h < 180) { [r, g, b] = [0, c, x]; }
+        else if (h >= 180 && h < 240) { [r, g, b] = [0, x, c]; }
+        else if (h >= 240 && h < 300) { [r, g, b] = [x, 0, c]; }
+        else if (h >= 300 && h < 360) { [r, g, b] = [c, 0, x]; }
+
+        this._r = Math.round((r + m) * 255);
+        this._g = Math.round((g + m) * 255);
+        this._b = Math.round((b + m) * 255);
+        this._a = a;
     }
 
     toRgb() {
@@ -371,3 +384,4 @@ const oklab2oklch = ([l, a, b]: number[]) => [
 ];
 
 const rgbToOklch = (rgb: number[]) => oklab2oklch(xyz2oklab(rgbLinear2xyz(rgb2srgbLinear(rgb)))); 
+

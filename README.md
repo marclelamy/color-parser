@@ -1,37 +1,19 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Color Parser
 
-## Getting Started
+A powerful color parsing tool that helps you instantly analyze, convert, and manage colors from any text source. Paste any text containing color codes, and the app will automatically detect and display them in an intuitive interface.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **Multi-format Parsing**: Automatically detects and parses a wide range of color formats, including hex, RGB(A), HSL(A), and color names.
+- **Interactive Color Panels**: Each detected color is displayed in its own interactive panel, showing detailed information and visual representations.
+- **Dynamic Editing**: Edit color values on the fly and see the changes instantly.
+- **Clipboard Integration**: Automatically pastes and parses content from your clipboard on page load.
+- **Exporting**: Convert and export colors to your desired format (e.g., RGBA, Hex).
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Usage
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Simply paste any block of text (like CSS, Tailwind config, or just a list of colors) into the application. The tool will parse it and display all found colors. You can then inspect, modify, and export them.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-# color-parser
+## Roadmap 
+- Support for oklch which doesn't work in the input
+- make mobile responsive (display as flex col rather than row the color panels)

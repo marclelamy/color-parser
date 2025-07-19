@@ -18,6 +18,7 @@ export default function TestPage() {
 
     const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const value = e.target.value
+        if (value.trim() === '') return
         setInputValue(value)
         
         // Use the old parser
@@ -403,3 +404,4 @@ export default function TestPage() {
         </div>
     )
 }
+

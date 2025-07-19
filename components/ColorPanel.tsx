@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/card'
 import { ColorPicker } from '@/components/ui/color-picker'
 import { Button } from './ui/button'
+import { ChevronDown } from 'lucide-react'
 
 interface ColorPanelProps {
     id: string
@@ -72,16 +73,21 @@ export function ColorPanel({
     }
 
     const { name, color } = parsedColor
+    if (!color) return null
 
-    const panelStyle: React.CSSProperties = color
-        ? {
-            backgroundColor: color.toRgbaString(),
-        }
+    const isTransparent = color.rgba.a < 1
+
+    // When the color is opaque, we just set the background color.
+    // When it's transparent, we show a checkerboard pattern behind a color overlay.
+    const panelStyle: React.CSSProperties = !isTransparent
+        ? { backgroundColor: color.toRgbString() }
         : {
-            backgroundColor: '#f0f0f0',
-        }
+              backgroundImage: `url('/transparent-bg.svg')`,
+              backgroundSize: '20px 20px',
+              backgroundRepeat: 'repeat',
+          }
 
-        const textColorClass = color && color.isLight() ? 'text-black' : 'text-white'
+    const textColorClass = color && color.isLight() ? 'text-black' : 'text-white'
 
     const formatHslString = (c: ParsedColor['color']): string => {
         if (!c) return '-'
@@ -143,15 +149,20 @@ export function ColorPanel({
 
     return (
         <Card
-            className="w-full h-full rounded-none border-0 p-4 min-w-[250px] "
+            className="w-full h-full rounded-none border-0 p-4 min-w-[300px] relative"
             style={panelStyle}
         >
-            {color && color.rgba.a < 1 && (
-                <div className="absolute inset-0 w-full h-full bg-[url('/transparent-bg.svg')] bg-repeat" />
+            {isTransparent && (
+                <div
+                    className="absolute inset-0"
+                    style={{ backgroundColor: color.toRgbaString() }}
+                />
             )}
-            <div className="relative mb-4 ">
-                <div className="flex items-center gap-2">
-                    <input
+            {/* Using a wrapper to ensure content appears above the overlay */}
+            <div className="relative">
+                <div className="relative mb-4 ">
+                    <div className="flex items-center gap-2">
+                        <input
                         type="text"
                         value={rawInput}
                         onChange={handleInputChange}
@@ -246,8 +257,13 @@ export function ColorPanel({
                             </div>
                         </>
                     )}
-                    <Button onClick={() => onShowMoreToggle(id)} variant="link" className={`p-0 h-auto ${textColorClass}`}>
+                    <Button 
+                        onClick={() => onShowMoreToggle(id)} 
+                        variant="link" 
+                        className={`p-0 h-auto text-xs flex items-center gap-1 ${textColorClass}`}
+                    >
                         {showMore ? 'Show Less' : 'Show More'}
+                        <ChevronDown className={`w-3 h-3 transition-transform ${showMore ? 'rotate-180' : ''}`} />
                     </Button>
                     {copySuccess && (
                         <div className="mt-2 text-xs p-1 bg-green-500/50 text-white rounded w-auto inline-block">
@@ -258,15 +274,24 @@ export function ColorPanel({
                     {/* New: Display tokenizer results */}
                     {tokens && tokens.length > 0 && (
                         <div className="mt-4 pt-2 border-t border-current/20">
-                            <div className="text-xs font-bold mb-2">🔍 Tokenizer ({tokens.length})</div>
+                            <div className="text-xs font-bold mb-2">
+                                🔍 Tokenizer ({tokens.length})
+                            </div>
                             {tokens.map((token, index) => (
                                 <div key={index} className="text-xs mb-1">
-                                    <span className="opacity-70">[{token.type}]</span> {token.raw}
+                                    <span className="opacity-70">
+                                        [{token.type}]
+                                    </span>{' '}
+                                    {token.raw}
                                     {token.context?.name && (
-                                        <div className="ml-2 opacity-60">→ {token.context.name}</div>
+                                        <div className="ml-2 opacity-60">
+                                            → {token.context.name}
+                                        </div>
                                     )}
                                     {token.context?.property && (
-                                        <div className="ml-2 opacity-60">in {token.context.property}</div>
+                                        <div className="ml-2 opacity-60">
+                                            in {token.context.property}
+                                        </div>
                                     )}
                                 </div>
                             ))}
@@ -274,6 +299,7 @@ export function ColorPanel({
                     )}
                 </div>
             </CardContent>
+        </div>
         </Card>
     )
 }

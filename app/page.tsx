@@ -92,19 +92,34 @@ export default function Home() {
 
 
     const handleInputChange = useCallback((id: string, newValue: string) => {
-        console.log('handleInputChange for panel:', id, 'new value:', newValue)
-        
-        // Update only the specific panel
-        setColorPanels(prev => prev.map(panel => 
-            panel.id === id 
-                ? { 
-                    ...panel, 
-                    rawInput: newValue,
-                    // Keep originalInput unchanged for revert functionality
-                    originalInput: panel.originalInput || panel.rawInput
-                  }
-                : panel
-        ))
+        setColorPanels(prev =>
+            prev.map(panel => {
+                if (panel.id === id) {
+                    // When the input is cleared, we don't want to parse it, but we want to keep the panel open
+                    if (newValue.trim() === '') {
+                        return {
+                            ...panel,
+                            rawInput: newValue,
+                            tokens: [], // Clear tokens when input is empty
+                        }
+                    }
+
+                    // For actual color values, re-tokenize
+                    const tokenizer = new ColorTokenizer(newValue)
+                    const newTokens = tokenizer.tokenize()
+                    tokenizer.addPositionInfo()
+
+                    return {
+                        ...panel,
+                        rawInput: newValue,
+                        tokens: newTokens,
+                        // Preserve the original input for the revert functionality
+                        originalInput: panel.originalInput || panel.rawInput,
+                    }
+                }
+                return panel
+            })
+        )
     }, [])
 
     const handleRevertPanel = useCallback((id: string) => {
@@ -150,8 +165,37 @@ export default function Home() {
             </div>
             <div className="flex flex-row flex-grow min-h-screen w-full">
                 {colorPanels.map((panel) => {
-                    const parsedColor = { ...parseColorLine(panel.rawInput), id: panel.id, raw: panel.rawInput }
-                    if (!parsedColor.color) return null
+                    // Fallback to originalInput if rawInput is empty to keep the panel displayed
+                    const displayInput = panel.rawInput.trim() === '' ? panel.originalInput : panel.rawInput
+                    const parsedColor = { ...parseColorLine(displayInput || ''), id: panel.id }
+                    
+                    if (!parsedColor.color) {
+                        // If parsing fails (e.g., empty input), still render a shell or a placeholder
+                        // For now, we'll keep it visible if there's an original value
+                        if (!panel.originalInput) return null
+
+                        const originalParsed = { ...parseColorLine(panel.originalInput), id: panel.id }
+                        return (
+                            <div
+                                key={panel.id}
+                                className="flex-grow min-w-[300px]"
+                                style={{ width: `${100 / colorPanels.length}%` }}
+                            >
+                                <ColorPanel
+                                    id={panel.id}
+                                    rawInput={panel.rawInput} // Show the empty input
+                                    originalInput={panel.originalInput}
+                                    parsedColor={originalParsed} // Use last valid color
+                                    tokens={[]} // No tokens for empty input
+                                    showMore={panel.showMore || false}
+                                    onShowMoreToggle={handleShowMoreToggle}
+                                    onInputChange={handleInputChange}
+                                    onRevert={handleRevertPanel}
+                                />
+                            </div>
+                        )
+                    }
+
                     return (
                         <div
                             key={panel.id}
@@ -162,8 +206,8 @@ export default function Home() {
                                 id={panel.id}
                                 rawInput={panel.rawInput}
                                 originalInput={panel.originalInput}
-                                parsedColor={parsedColor}
-                                tokens={panel.tokens || []} // Pass tokenizer results
+                                parsedColor={{ ...parsedColor, id: panel.id }}
+                                tokens={panel.tokens?.length ? panel.tokens : new ColorTokenizer(panel.rawInput).tokenize()} // Pass tokenizer results
                                 showMore={panel.showMore || false}
                                 onShowMoreToggle={handleShowMoreToggle}
                                 onInputChange={handleInputChange}
