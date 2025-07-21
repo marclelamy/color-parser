@@ -19,3 +19,4 @@ oklch(calc(0.5 + 0.1) 0.2 45deg) rgba(255, calc(100 + 50), 0, var(--opacity)) #R
 hsl(270 60% 70% / 80%) rgb(255 128 0 / 0.5) oklch(0.7 0.15 180 / 90%) oklch(0.646 0.222 41.116) 
 
 
+tldr: Free color parsing tool that extracts colors from text and displays them in panels with format conversions

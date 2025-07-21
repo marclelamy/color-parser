@@ -9,7 +9,6 @@ export async function buildColorObject(value: string): Promise<ColorObject[]> {
     // Tokenize the input
     const tokenizer = new ColorTokenizer(value)
     const tokens = tokenizer.getTokens()
-    console.log('tokens', tokens)
 
     // Parse and convert each token
     const colorObjects: ColorObject[] = []
@@ -35,7 +34,7 @@ export async function buildColorObject(value: string): Promise<ColorObject[]> {
         }
     }
 
-    // console.log('colorObjects', JSON.stringify(colorObjects, null, 2))
+    console.log('colorObjects', JSON.stringify(colorObjects, null, 2))
 
     return colorObjects
 }

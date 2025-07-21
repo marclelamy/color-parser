@@ -157,18 +157,41 @@ export default function Home() {
         // Then handle async parsing separately
         if (newValue.trim() !== '') {
             buildColorObject(newValue).then(colorObjects => {
-                setColorPanels(currentPanels =>
-                    currentPanels.map(currentPanel =>
-                        currentPanel.id === id
-                            ? { 
-                                ...currentPanel, 
-                                colorObjects,
-                                // Store as last valid color only if we got valid results
-                                lastValidColorObjects: colorObjects.length > 0 ? colorObjects : currentPanel.lastValidColorObjects
-                            }
-                            : currentPanel
+                // If multiple colors are found, create separate panels like clipboard loading does
+                if (colorObjects.length > 1) {
+                    // Create new panels for each color
+                    const newPanels: ColorPanelState[] = colorObjects.map(colorObj => ({
+                        id: uuidv4(),
+                        rawInput: colorObj.token.raw,
+                        originalInput: colorObj.token.raw,
+                        colorObjects: [colorObj],
+                        lastValidColorObjects: [colorObj]
+                    }))
+                    
+                    // Replace the current panel with the new panels
+                    setColorPanels(currentPanels => {
+                        const currentPanelIndex = currentPanels.findIndex(panel => panel.id === id)
+                        if (currentPanelIndex === -1) return currentPanels // Panel not found, no change
+                        
+                        const newPanelArray = [...currentPanels]
+                        newPanelArray.splice(currentPanelIndex, 1, ...newPanels)
+                        return newPanelArray
+                    })
+                } else {
+                    // Single or no color found, update the current panel normally
+                    setColorPanels(currentPanels =>
+                        currentPanels.map(currentPanel =>
+                            currentPanel.id === id
+                                ? { 
+                                    ...currentPanel, 
+                                    colorObjects,
+                                    // Store as last valid color only if we got valid results
+                                    lastValidColorObjects: colorObjects.length > 0 ? colorObjects : currentPanel.lastValidColorObjects
+                                }
+                                : currentPanel
+                        )
                     )
-                )
+                }
             }).catch(error => {
                 console.error('Failed to parse color:', error)
                 setColorPanels(currentPanels =>
