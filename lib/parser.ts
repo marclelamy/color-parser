@@ -110,10 +110,35 @@ function parseRgbToken(token: Token): ParsedColor | null {
  */
 function parseHslToken(token: Token): ParsedColor | null {
     const match = token.raw.match(/hsla?\(\s*([^)]+)\s*\)/i)
-    if (!match) return null
+    if (!match) {
+        return null
+    }
 
-    const values = match[1].split(',').map(v => v.trim())
-    if (values.length < 3 || values.length > 4) return null
+    const valueString = match[1].trim()
+    
+    // Try to split by comma first, then by spaces if no commas
+    let values: string[]
+    if (valueString.includes(',')) {
+        values = valueString.split(',').map(v => v.trim())
+    } else {
+        // Split by spaces, but be careful with alpha that might use slash syntax
+        const parts = valueString.split('/')
+        const colorPart = parts[0].trim()
+        const alphaPart = parts[1]?.trim()
+        
+        // Split the color part by spaces
+        const colorValues = colorPart.split(/\s+/).filter(v => v.length > 0)
+        values = colorValues
+        
+        // Add alpha part if it exists
+        if (alphaPart) {
+            values.push(alphaPart)
+        }
+    }
+    
+    if (values.length < 3 || values.length > 4) {
+        return null
+    }
 
     // Parse hue (can be in degrees or just a number)
     const h = parseFloat(values[0].replace(/deg|turn|rad/i, ''))
@@ -128,11 +153,12 @@ function parseHslToken(token: Token): ParsedColor | null {
         a = parseAlphaValue(values[3])
     }
 
-    return {
-        colorType: 'hsl',
+    const result = {
+        colorType: 'hsl' as const,
         color: { h, s, l },
         alpha: a
     }
+    return result
 }
 
 /**

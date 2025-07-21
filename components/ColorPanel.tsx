@@ -282,14 +282,13 @@ export function ColorPanel({
                             </div>
                         </>
                     )}
-                    <Button 
+                    <button 
                         onClick={() => onShowMoreToggle(id)} 
-                        variant="link" 
-                        className={`p-0 h-auto text-xs flex items-center gap-1 ${textColorClass}`}
+                        className={`p-0 m-0 h-auto text-xs flex items-center gap-1 underline-offset-4 hover:underline ${textColorClass}`}
                     >
                         {showMore ? 'Show Less' : 'Show More'}
                         <ChevronDown className={`w-3 h-3 transition-transform ${showMore ? 'rotate-180' : ''}`} />
-                    </Button>
+                    </button>
                     {copySuccess && (
                         <div className="mt-2 text-xs p-1 bg-green-500/50 text-white rounded w-auto inline-block">
                             {copySuccess}

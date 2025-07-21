@@ -8,7 +8,7 @@ const RGB_PATTERN = /rgba?\(\s*([^)]+)\s*\)/gi
 const HSL_PATTERN = /hsla?\(\s*([^)]+)\s*\)/gi
 const CMYK_PATTERN = /cmyk\(\s*([^)]+)\s*\)/gi
 const OKLCH_PATTERN = /oklch\(\s*([^)]+)\s*\)/gi
-const CSS_VAR_PATTERN = /--[\w-]+\s*:\s*([^;}\n]+)/g
+const CSS_VAR_PATTERN = /--[\w-]+\s*:\s*((?:\d+(?:\.\d+)?%?\s*){2,4}(?=\s+[a-z#]|[;}\n]|$))/g
 
 
 
@@ -48,6 +48,7 @@ export class ColorTokenizer {
 
         // Sort tokens by position and remove overlaps
         tokens.sort((a, b) => a.startPosition - b.startPosition)
+
         return this.removeOverlaps(tokens)
     }
 

@@ -9,15 +9,19 @@ export async function buildColorObject(value: string): Promise<ColorObject[]> {
     // Tokenize the input
     const tokenizer = new ColorTokenizer(value)
     const tokens = tokenizer.getTokens()
+    console.log('tokens', tokens)
 
     // Parse and convert each token
     const colorObjects: ColorObject[] = []
     
     for (const token of tokens) {
         const parsedColor = parseToken(token)
+        // console.log('parsedColor', parsedColor)
+
         if (parsedColor) {
             try {
                 const convertedColors = convertToAllFormats(parsedColor)
+                // console.log('convertedColors', convertedColors)
                 
                 colorObjects.push({
                     token,
@@ -31,7 +35,7 @@ export async function buildColorObject(value: string): Promise<ColorObject[]> {
         }
     }
 
-    console.log('colorObjects', JSON.stringify(colorObjects, null, 2))
+    // console.log('colorObjects', JSON.stringify(colorObjects, null, 2))
 
     return colorObjects
 }
