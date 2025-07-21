@@ -16,6 +16,7 @@ interface ColorPanelState {
     rawInput: string
     originalInput?: string
     colorObjects?: ColorObject[]
+    lastValidColorObjects?: ColorObject[]
     showMore?: boolean
 }
 
@@ -24,10 +25,25 @@ const initialPanel: ColorPanelState = {
     rawInput: '#010f1d',
     originalInput: '#010f1d',
     showMore: false,
+    colorObjects: [],
+    lastValidColorObjects: []
 }
 
 export default function Home() {
     const [colorPanels, setColorPanels] = useState<ColorPanelState[]>([initialPanel])
+
+    // Parse the initial panel's color on mount
+    useEffect(() => {
+        const parseInitialPanel = async () => {
+            const colorObjects = await buildColorObject(initialPanel.rawInput)
+            setColorPanels(prev => prev.map(panel => 
+                panel.id === initialPanel.id 
+                    ? { ...panel, colorObjects, lastValidColorObjects: colorObjects }
+                    : panel
+            ))
+        }
+        parseInitialPanel()
+    }, [])
 
     const parseAndAddPanels = useCallback(async (input: string, replaceExisting: boolean = false) => {
         try {
@@ -41,7 +57,8 @@ export default function Home() {
                     id: uuidv4(),
                     rawInput: input,
                     originalInput: input,
-                    colorObjects: []
+                    colorObjects: [],
+                    lastValidColorObjects: []
                 }
 
                 if (replaceExisting) {
@@ -57,7 +74,8 @@ export default function Home() {
                 id: uuidv4(),
                 rawInput: colorObj.token.raw,
                 originalInput: colorObj.token.raw,
-                colorObjects: [colorObj]
+                colorObjects: [colorObj],
+                lastValidColorObjects: [colorObj]
             }))
 
             console.log('parseAndAddPanels - creating panels:', newPanels)
@@ -74,7 +92,8 @@ export default function Home() {
                 id: uuidv4(),
                 rawInput: input,
                 originalInput: input,
-                colorObjects: []
+                colorObjects: [],
+                lastValidColorObjects: []
             }
 
             if (replaceExisting) {
@@ -111,7 +130,6 @@ export default function Home() {
                         ...panel,
                         rawInput: newValue,
                         originalInput: panel.originalInput || panel.rawInput,
-                        colorObjects: newValue.trim() === '' ? [] : panel.colorObjects
                     }
                     : panel
             )
@@ -123,7 +141,12 @@ export default function Home() {
                 setColorPanels(currentPanels =>
                     currentPanels.map(currentPanel =>
                         currentPanel.id === id
-                            ? { ...currentPanel, colorObjects }
+                            ? { 
+                                ...currentPanel, 
+                                colorObjects,
+                                // Store as last valid color only if we got valid results
+                                lastValidColorObjects: colorObjects.length > 0 ? colorObjects : currentPanel.lastValidColorObjects
+                            }
                             : currentPanel
                     )
                 )
@@ -137,32 +160,62 @@ export default function Home() {
                     )
                 )
             })
+        } else {
+            // When input is cleared, clear current colorObjects but keep lastValid for display
+            setColorPanels(currentPanels =>
+                currentPanels.map(currentPanel =>
+                    currentPanel.id === id
+                        ? { ...currentPanel, colorObjects: [] }
+                        : currentPanel
+                )
+            )
         }
     }, [])
 
-    const handleRevertPanel = useCallback((id: string) => {
-        setColorPanels(prev => prev.map(panel => 
-            panel.id === id 
+    const handleRevertPanel = useCallback(async (id: string) => {
+        const panel = colorPanels.find(p => p.id === id)
+        if (!panel?.originalInput) return
+        
+        // Parse the original input to get the color objects
+        const colorObjects = await buildColorObject(panel.originalInput)
+        
+        setColorPanels(prev => prev.map(currentPanel => 
+            currentPanel.id === id 
                 ? { 
-                    ...panel, 
-                    rawInput: panel.originalInput || panel.rawInput
+                    ...currentPanel, 
+                    rawInput: currentPanel.originalInput || currentPanel.rawInput,
+                    colorObjects,
+                    lastValidColorObjects: colorObjects
                   }
-                : panel
+                : currentPanel
         ))
-    }, [])
+    }, [colorPanels])
 
     const handleAddPanel = useCallback(() => {
         const newPanel: ColorPanelState = {
             id: uuidv4(),
-            rawInput: '',
-            originalInput: '',
+            rawInput: '#010f1d',
+            originalInput: '#010f1d',
             colorObjects: []
         }
         setColorPanels((currentPanels) => [...currentPanels, newPanel])
+        
+        // Parse the default color for the new panel
+        buildColorObject('#010f1d').then(colorObjects => {
+            setColorPanels(currentPanels =>
+                currentPanels.map(currentPanel =>
+                    currentPanel.id === newPanel.id
+                        ? { ...currentPanel, colorObjects, lastValidColorObjects: colorObjects }
+                        : currentPanel
+                )
+            )
+        })
     }, [])
     
-    const handleReset = useCallback(() => {
-        setColorPanels([initialPanel])
+    const handleReset = useCallback(async () => {
+        const colorObjects = await buildColorObject(initialPanel.rawInput)
+        const resetPanel = { ...initialPanel, id: uuidv4(), colorObjects, lastValidColorObjects: colorObjects }
+        setColorPanels([resetPanel])
     }, [])
 
     const handleShowMoreToggle = useCallback((id: string) => {
@@ -183,13 +236,10 @@ export default function Home() {
             </div>
             <div className="flex flex-row flex-grow min-h-screen w-full">
                 {colorPanels.map((panel) => {
-                    // Use the first color object if available
-                    const colorObject = panel.colorObjects?.[0]
+                    // Use current color object if available, fallback to last valid color for display
+                    const colorObject = panel.colorObjects?.[0] || panel.lastValidColorObjects?.[0]
+                    const currentColorObject = panel.colorObjects?.[0] // For tokens display
                     
-                    if (!colorObject && !panel.originalInput) {
-                        return null
-                    }
-
                     return (
                         <div
                             key={panel.id}
@@ -201,7 +251,7 @@ export default function Home() {
                                     rawInput={panel.rawInput}
                                     originalInput={panel.originalInput}
                                     parsedColor={colorObject?.parsedColor}
-                                    tokens={colorObject ? [colorObject.token] : []}
+                                    tokens={currentColorObject ? [currentColorObject.token] : []}
                                     convertedColors={colorObject?.convertedColors}
                                     showMore={panel.showMore || false}
                                     onShowMoreToggle={handleShowMoreToggle}

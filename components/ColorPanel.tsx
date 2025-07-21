@@ -83,16 +83,13 @@ export function ColorPanel({
         isLight: () => boolean
     }
 
-    if (!convertedColors || !parsedColor) {
-        return null
-    }
-
-    const alpha = parsedColor.alpha || 1
+    // Default to a dark blue color when no color data is available
+    const alpha = parsedColor?.alpha || 1
     const isTransparent = alpha < 1
-    const rgb = convertedColors.rgb as RGBColor
-    const hsl = convertedColors.hsl as HSLColor
-    const cmyk = convertedColors.cmyk as CMYKColor
-    const hex = convertedColors.hex as string
+    const rgb = convertedColors?.rgb as RGBColor || { r: 1, g: 15, b: 29 } // #010f1d
+    const hsl = convertedColors?.hsl as HSLColor || { h: 208, s: 93, l: 6 }
+    const cmyk = convertedColors?.cmyk as CMYKColor || { c: 97, m: 48, y: 0, k: 89 }
+    const hex = convertedColors?.hex as string || '#010f1d'
     
     // Create a color object with proper methods
     const color: ColorMethods = {
