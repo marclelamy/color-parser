@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
-import type { ColorType, Color, RGBColor, HSLColor, CMYKColor, ParsedColor, Token } from '@/lib/types'
+import type { ColorType, Color, RGBColor, HSLColor, CMYKColor, OKLCHColor, ParsedColor, Token } from '@/lib/types'
 import {
     Card,
     CardContent,
@@ -79,7 +79,7 @@ export function ColorPanel({
         toHsl: () => HSLColor
         toRgb: () => RGBColor
         toCmyk: () => CMYKColor
-        toOklch: () => { l: number; c: number; h: number }
+        toOklch: () => OKLCHColor
         isLight: () => boolean
     }
 
@@ -89,6 +89,7 @@ export function ColorPanel({
     const rgb = convertedColors?.rgb as RGBColor || { r: 1, g: 15, b: 29 } // #010f1d
     const hsl = convertedColors?.hsl as HSLColor || { h: 208, s: 93, l: 6 }
     const cmyk = convertedColors?.cmyk as CMYKColor || { c: 97, m: 48, y: 0, k: 89 }
+    const oklch = convertedColors?.oklch as OKLCHColor || { l: 0.06, c: 0.05, h: 208 }
     const hex = convertedColors?.hex as string || '#010f1d'
     
     // Create a color object with proper methods
@@ -99,7 +100,7 @@ export function ColorPanel({
         toHsl: () => hsl,
         toRgb: () => rgb,
         toCmyk: () => cmyk,
-        toOklch: () => ({ l: 0.5, c: 0.5, h: 180 }), // Placeholder for now
+        toOklch: () => oklch,
         isLight: () => {
             // Calculate perceived brightness using standard formula
             const brightness = (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000
@@ -121,6 +122,9 @@ export function ColorPanel({
     const formatHslString = (c: ColorMethods | null): string => {
         if (!c) return '-'
         const hsl = c.toHsl()
+        if (isTransparent) {
+            return `hsla(${hsl.h.toFixed(0)}, ${hsl.s.toFixed(0)}%, ${hsl.l.toFixed(0)}%, ${alpha})`
+        }
         return `hsl(${hsl.h.toFixed(0)}, ${hsl.s.toFixed(0)}%, ${hsl.l.toFixed(
             0
         )}%)`
@@ -128,6 +132,9 @@ export function ColorPanel({
     const formatRgbString = (c: ColorMethods | null): string => {
         if (!c) return '-'
         const rgb = c.toRgb()
+        if (isTransparent) {
+            return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`
+        }
         return `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`
     }
     const formatHexString = (c: ColorMethods | null): string =>
@@ -142,7 +149,10 @@ export function ColorPanel({
     const formatOklchString = (c: ColorMethods | null): string => {
         if (!c) return '-'
         const oklch = c.toOklch()
-        return `oklch(${oklch.l.toFixed(2)}, ${oklch.c.toFixed(2)}, ${oklch.h.toFixed(2)})`
+        if (isTransparent) {
+            return `oklch(${oklch.l.toFixed(3)} ${oklch.c.toFixed(3)} ${oklch.h.toFixed(1)} / ${alpha})`
+        }
+        return `oklch(${oklch.l.toFixed(3)} ${oklch.c.toFixed(3)} ${oklch.h.toFixed(1)})`
     }
 
     const handleCopy = async (text: string, format: string) => {
@@ -219,19 +229,23 @@ export function ColorPanel({
 
             <CardContent className='px-0'>
                 <div className={`space-y-1 font-mono text-xs ${textColorClass}`}>
+
+                    <h3 className='text-lg font-bold mb-2 h-10'>
+                        {parsedColor && parsedColor.cssVariable}
+                    </h3>
                     <div>
-                        HSL:{' '}
+                        {isTransparent ? 'HSLA' : 'HSL'}:{' '}
                         <span
-                            onClick={() => handleCopy(hslString, 'HSL')}
+                            onClick={() => handleCopy(hslString, isTransparent ? 'HSLA' : 'HSL')}
                             className="inline-block cursor-pointer p-1 rounded bg-black/10 hover:bg-black/30 transition-colors"
                         >
                             {hslString}
                         </span>
                     </div>
                     <div>
-                        RGB:{' '}
+                        {isTransparent ? 'RGBA' : 'RGB'}:{' '}
                         <span
-                            onClick={() => handleCopy(rgbString, 'RGB')}
+                            onClick={() => handleCopy(rgbString, isTransparent ? 'RGBA' : 'RGB')}
                             className="inline-block cursor-pointer p-1 rounded bg-black/10 hover:bg-black/30 transition-colors"
                         >
                             {rgbString}

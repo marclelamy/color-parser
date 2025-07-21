@@ -31,6 +31,7 @@ const initialPanel: ColorPanelState = {
 
 export default function Home() {
     const [colorPanels, setColorPanels] = useState<ColorPanelState[]>([initialPanel])
+    const [isReadingClipboard, setIsReadingClipboard] = useState(true)
 
     // Parse the initial panel's color on mount
     useEffect(() => {
@@ -115,6 +116,8 @@ export default function Home() {
                 }
             } catch (error) {
                 console.log('Could not read clipboard:', error)
+            } finally {
+                setIsReadingClipboard(false)
             }
         }
 
@@ -226,6 +229,11 @@ export default function Home() {
 
     return (
         <main className="relative min-h-screen w-full">
+            {isReadingClipboard && (
+                <div className="fixed inset-0 bg-black z-50 flex items-center justify-center">
+                    <div className="text-white text-lg">Reading from clipboard...</div>
+                </div>
+            )}
             <div className="fixed top-4 right-4 z-10 flex flex-col gap-2">
                 <Button onClick={handleAddPanel} variant="outline" size="icon" title="Add empty panel">
                     <Plus className="h-4 w-4" />

@@ -6,6 +6,7 @@ import {
     HSLAColor, 
     HexColor, 
     CMYKColor, 
+    OKLCHColor,
     XYZColor,
     Color,
     ColorType
@@ -33,6 +34,9 @@ export function convertToAllFormats(parsedColor: ParsedColor): Record<ColorType,
         case 'cmyk':
             xyz = cmykToXyz(color as CMYKColor)
             break
+        case 'oklch':
+            xyz = oklchToXyz(color as OKLCHColor)
+            break
         default:
             throw new Error(`Unsupported color type: ${colorType}`)
     }
@@ -42,12 +46,14 @@ export function convertToAllFormats(parsedColor: ParsedColor): Record<ColorType,
     const hsl = xyzToHsl(xyz)
     const hex = xyzToHex(xyz)
     const cmyk = xyzToCmyk(xyz)
+    const oklch = xyzToOklch(xyz)
     
     const colors: Record<ColorType, Color> = {
         rgb,
         hsl,
         hex,
-        cmyk
+        cmyk,
+        oklch
     }
     
     // Add alpha versions if alpha < 1
@@ -289,5 +295,110 @@ export function xyzToCmyk(xyz: XYZColor): CMYKColor {
         m: Math.round(m * 100),
         y: Math.round(y * 100),
         k: Math.round(k * 100)
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// OKLCH CONVERSION HELPERS
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// Helper for radians/degrees conversion
+const DEG2RAD = Math.PI / 180
+const RAD2DEG = 180 / Math.PI
+
+// Multiply 3x3 matrix with vector
+function multiplyMatrix3x3(m: number[], v: number[]): number[] {
+    return [
+        m[0] * v[0] + m[1] * v[1] + m[2] * v[2],
+        m[3] * v[0] + m[4] * v[1] + m[5] * v[2],
+        m[6] * v[0] + m[7] * v[1] + m[8] * v[2]
+    ]
+}
+
+/**
+ * Convert OKLCH to XYZ
+ */
+export function oklchToXyz(oklch: OKLCHColor): XYZColor {
+    const L = oklch.l
+    const C = oklch.c
+    const h = oklch.h
+
+    // Step 1: OKLCH → Oklab
+    const a = C * Math.cos(h * DEG2RAD)
+    const b = C * Math.sin(h * DEG2RAD)
+
+    // Step 2: Oklab → LMS'
+    const l_ = L + 0.3963377773761749 * a + 0.2158037573099136 * b
+    const m_ = L - 0.1055613458156586 * a - 0.0638541728258133 * b
+    const s_ = L - 0.0894841775298119 * a - 1.2914855480194092 * b
+
+    // Step 3: Cube each channel
+    const l = l_ ** 3
+    const m = m_ ** 3
+    const s = s_ ** 3
+
+    // Step 4: LMS → XYZ
+    const xyz = multiplyMatrix3x3(
+        [
+            1.2268798758459243, -0.5578149944602171, 0.2813910456659647,
+            -0.0405757452148008, 1.1122868032803170, -0.0717110580655164,
+            -0.0763729366746601, -0.4214933324022432, 1.5869240198367816
+        ],
+        [l, m, s]
+    )
+
+    return {
+        x: Math.round(xyz[0] * 100 * 1000) / 1000, // Scale to 0-100 and round
+        y: Math.round(xyz[1] * 100 * 1000) / 1000,
+        z: Math.round(xyz[2] * 100 * 1000) / 1000
+    }
+}
+
+/**
+ * Convert XYZ to OKLCH
+ */
+export function xyzToOklch(xyz: XYZColor): OKLCHColor {
+    // Normalize XYZ from 0-100 to 0-1
+    const X = xyz.x / 100
+    const Y = xyz.y / 100
+    const Z = xyz.z / 100
+
+    // Step 1: XYZ → LMS
+    const lms = multiplyMatrix3x3(
+        [
+            0.8190224379967030, 0.3619062600528904, -0.1288737815209879,
+            0.0329836539323885, 0.9292868615863434, 0.0361446663506424,
+            0.0481771893596242, 0.2642395317527308, 0.6335478284694309
+        ],
+        [X, Y, Z]
+    )
+
+    // Step 2: Cube root each channel
+    const l_ = Math.cbrt(lms[0])
+    const m_ = Math.cbrt(lms[1])
+    const s_ = Math.cbrt(lms[2])
+
+    // Step 3: LMS' → Oklab
+    const oklab = multiplyMatrix3x3(
+        [
+            0.2104542553, 0.7936177850, -0.0040720468,
+            1.9779984951, -2.4285922050, 0.4505937099,
+            0.0259040371, 0.7827717662, -0.8086757660
+        ],
+        [l_, m_, s_]
+    )
+
+    // Step 4: Oklab → OKLCH
+    const L = oklab[0]
+    const a = oklab[1]
+    const b = oklab[2]
+    const C = Math.sqrt(a * a + b * b)
+    let h = Math.atan2(b, a) * RAD2DEG
+    if (h < 0) h += 360 // Ensure h is [0,360)
+
+    return {
+        l: Math.round(L * 1000) / 1000,
+        c: Math.round(C * 1000) / 1000,
+        h: Math.round(h * 1000) / 1000
     }
 } 

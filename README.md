@@ -19,5 +19,5 @@ Simply paste any block of text (like a list of Hex/rgb/hsl/..., CSS, Tailwind co
 - make mobile responsive (display as flex col rather than row the color panels)
 - round-trip color conversion
 - add a button for "my string didn't work" with string issue + message or the user - rate limit the form 
-- the export needs more output types
+- the export needs more output types and maybe ways wher users can write their own custom string with params as `{func_name}({r}-{g}-{b}, {a}) for ex
 - [idea] - add option to change layout to grid of color and on hover block scales 2x with drop shadow and shows more details than on the unscaled

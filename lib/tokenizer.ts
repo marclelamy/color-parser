@@ -7,6 +7,7 @@ const HEX_PATTERN = /#?([0-9a-fA-F]{3,8})\b/g
 const RGB_PATTERN = /rgba?\(\s*([^)]+)\s*\)/gi
 const HSL_PATTERN = /hsla?\(\s*([^)]+)\s*\)/gi
 const CMYK_PATTERN = /cmyk\(\s*([^)]+)\s*\)/gi
+const OKLCH_PATTERN = /oklch\(\s*([^)]+)\s*\)/gi
 const CSS_VAR_PATTERN = /--[\w-]+\s*:\s*([^;}\n]+)/g
 
 
@@ -41,6 +42,9 @@ export class ColorTokenizer {
 
         // Extract cmyk colors
         this.extractCmykColors(tokens)
+
+        // Extract oklch colors
+        this.extractOklchColors(tokens)
 
         // Sort tokens by position and remove overlaps
         tokens.sort((a, b) => a.startPosition - b.startPosition)
@@ -155,6 +159,25 @@ export class ColorTokenizer {
             tokens.push({
                 id: uuidv4(),
                 type: 'cmyk',
+                raw: match[0],
+                startPosition: match.index,
+                endPosition: match.index + match[0].length,
+                line: 0 // Will be set later
+            })
+        }
+    }
+
+    /**
+     * Extract oklch colors
+     */
+    private extractOklchColors(tokens: Token[]): void {
+        OKLCH_PATTERN.lastIndex = 0
+        let match
+
+        while ((match = OKLCH_PATTERN.exec(this.text)) !== null) {
+            tokens.push({
+                id: uuidv4(),
+                type: 'oklch',
                 raw: match[0],
                 startPosition: match.index,
                 endPosition: match.index + match[0].length,

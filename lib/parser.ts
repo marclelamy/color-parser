@@ -1,4 +1,4 @@
-import { Token, ParsedColor, HexColor } from './types'
+import { Token, ParsedColor, HexColor, OKLCHColor } from './types'
 
 /**
  * Parse tokens into color objects
@@ -21,6 +21,8 @@ export function parseToken(token: Token): ParsedColor | null {
                 return parseHslToken(token)
             case 'cmyk':
                 return parseCmykToken(token)
+            case 'oklch':
+                return parseOklchToken(token)
             case 'css-variable':
                 return parseCssVariableToken(token)
             default:
@@ -174,32 +176,88 @@ function parseCmykToken(token: Token): ParsedColor | null {
 }
 
 /**
+ * Parse OKLCH color tokens
+ * Supports: oklch(l c h) and oklch(l c h / a)
+ */
+function parseOklchToken(token: Token): ParsedColor | null {
+    const match = token.raw.match(/oklch\(\s*([^)]+)\s*\)/i)
+    if (!match) return null
+
+    const valueString = match[1].trim()
+    
+    // Handle alpha with slash syntax: "l c h / a"
+    const parts = valueString.split('/')
+    const colorPart = parts[0].trim()
+    const alphaPart = parts[1]?.trim()
+
+    const values = colorPart.split(/\s+/).filter(v => v.length > 0)
+    if (values.length < 3) return null
+
+    // Parse L (lightness 0-1, but could be percentage)
+    let l = parseFloat(values[0])
+    if (values[0].includes('%')) {
+        l = l / 100
+    }
+
+    // Parse C (chroma, typically 0-1+ but could be higher)
+    const c = parseFloat(values[1])
+
+    // Parse H (hue in degrees, 0-360)
+    let h = parseFloat(values[2])
+    if (values[2].includes('deg')) {
+        h = parseFloat(values[2].replace('deg', ''))
+    }
+
+    // Parse alpha if present
+    let a = 1
+    if (alphaPart) {
+        a = parseAlphaValue(alphaPart)
+    }
+
+    return {
+        colorType: 'oklch',
+        color: { l, c, h } as OKLCHColor,
+        alpha: a
+    }
+}
+
+/**
  * Parse CSS variable tokens
  * These can contain unwrapped color values like "20 14.3% 4.1%" (HSL without hsl())
  */
 function parseCssVariableToken(token: Token): ParsedColor | null {
-    // Extract the value part after the colon
-    const match = token.raw.match(/--[\w-]+\s*:\s*([^;}\n]+)/)
+    // Extract both the CSS variable name and value
+    const match = token.raw.match(/(--[\w-]+)\s*:\s*([^;}\n]+)/)
     if (!match) return null
 
-    const value = match[1].trim()
+    const cssVariableName = match[1].replace(/^--/, '').trim()
+    const value = match[2].trim()
 
     // Try to detect what kind of color this is
     // Check for wrapped functions first
     if (value.match(/^#[0-9a-fA-F]{3,8}$/)) {
-        return parseToken({ ...token, raw: value, type: 'hex' })
+        const parsed = parseToken({ ...token, raw: value, type: 'hex' })
+        return parsed ? { ...parsed, cssVariable: cssVariableName } : null
     }
     
     if (value.match(/^rgb/i)) {
-        return parseToken({ ...token, raw: value, type: 'rgb' })
+        const parsed = parseToken({ ...token, raw: value, type: 'rgb' })
+        return parsed ? { ...parsed, cssVariable: cssVariableName } : null
     }
     
     if (value.match(/^hsl/i)) {
-        return parseToken({ ...token, raw: value, type: 'hsl' })
+        const parsed = parseToken({ ...token, raw: value, type: 'hsl' })
+        return parsed ? { ...parsed, cssVariable: cssVariableName } : null
     }
     
     if (value.match(/^cmyk/i)) {
-        return parseToken({ ...token, raw: value, type: 'cmyk' })
+        const parsed = parseToken({ ...token, raw: value, type: 'cmyk' })
+        return parsed ? { ...parsed, cssVariable: cssVariableName } : null
+    }
+    
+    if (value.match(/^oklch/i)) {
+        const parsed = parseToken({ ...token, raw: value, type: 'oklch' })
+        return parsed ? { ...parsed, cssVariable: cssVariableName } : null
     }
 
     // Check for unwrapped HSL-like values (space or comma separated numbers with %)
@@ -211,6 +269,7 @@ function parseCssVariableToken(token: Token): ParsedColor | null {
         const a = unwrappedHslMatch[4] ? parseAlphaValue(unwrappedHslMatch[4]) : 1
 
         return {
+            cssVariable: cssVariableName,
             colorType: 'hsl',
             color: { h, s, l },
             alpha: a
@@ -242,6 +301,7 @@ function parseCssVariableToken(token: Token): ParsedColor | null {
         const a = unwrappedRgbMatch[4] ? parseAlphaValue(unwrappedRgbMatch[4]) : 1
 
         return {
+            cssVariable: cssVariableName,
             colorType: 'rgb',
             color: { r: r!, g: g!, b: b! },
             alpha: a

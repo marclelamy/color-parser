@@ -8,9 +8,9 @@ export type ColorObject = {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Color Types
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-export type Color = HSLColor | RGBColor | HexColor | CMYKColor | XYZColor | HSLAColor | RGBAColor
+export type Color = HSLColor | RGBColor | HexColor | CMYKColor | XYZColor | HSLAColor | RGBAColor | OKLCHColor
 
-export type ColorType = 'hsl' | 'rgb' | 'hex' | 'cmyk'
+export type ColorType = 'hsl' | 'rgb' | 'hex' | 'cmyk' | 'oklch'
 
 export type HSLColor = {
     h: number
@@ -43,12 +43,19 @@ export type XYZColor = {
     z: number
 }
 
+export type OKLCHColor = {
+    l: number // Lightness (0-1)
+    c: number // Chroma (0-1+)
+    h: number // Hue (0-360 degrees)
+}
+
+
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // TOKENS
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-export type TokenType = 'hex' | 'rgb' | 'hsl' | 'cmyk' | 'css-variable'
+export type TokenType = 'hex' | 'rgb' | 'hsl' | 'cmyk' | 'oklch' | 'css-variable'
 
 export interface Token {
     id: string
@@ -64,6 +71,7 @@ export interface Token {
 // Parsing
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 export type ParsedColor = {
+    cssVariable?: string
     colorType: ColorType
     color: Color
     alpha: number | null
