@@ -33,6 +33,7 @@ export default function Home() {
     const [colorPanels, setColorPanels] = useState<ColorPanelState[]>([initialPanel])
     const [isReadingClipboard, setIsReadingClipboard] = useState(true)
     const panelsContainerRef = useRef<HTMLDivElement>(null)
+    const isInitialMount = useRef(true)
 
     // Parse the initial panel's color on mount
     useEffect(() => {
@@ -48,6 +49,11 @@ export default function Home() {
     }, [])
 
     useEffect(() => {
+        if (isInitialMount.current) {
+            isInitialMount.current = false
+            return
+        }
+
         if (panelsContainerRef.current) {
             panelsContainerRef.current.scrollTo({
                 left: panelsContainerRef.current.scrollWidth,
