@@ -20,3 +20,19 @@ hsl(270 60% 70% / 80%) rgb(255 128 0 / 0.5) oklch(0.7 0.15 180 / 90%) oklch(0.64
 
 
 tldr: Free color parsing tool that extracts colors from text and displays them in panels with format conversions
+
+
+
+I've always been frustrated converting colors between Photoshop, Figma, CSS and Tailwind. You need the exact format, find the right website, deal with comma placement... it's always been a pain.
+
+So I built colorparser.com over the weekend.
+
+Basically, you paste any messy text with colors in it, and it automatically finds them and creates separate panels for each color. Then you just click on whatever format you need (RGB, HSL, hex, OKLCH, etc.) to copy it.
+
+The nice thing is it handles format variations - so `hsl(200, 100, 50)`, `hsl(200 100 50)` or `hsl(200, 100%, 50%)` all work the same way.
+
+When you visit it, it automatically reads your clipboard and parses any colors it finds, which saves time. Ever.thing runs in the client/
+
+Currently supports hex, RGB, RGBA, HSL, HSLA, CMYK, and OKLCH. Planning to add more formats.
+
+It's free and open source. Thought some of you might find it useful.

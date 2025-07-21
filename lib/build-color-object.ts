@@ -1,5 +1,3 @@
-'use server'
-
 import { ColorTokenizer } from './tokenizer'
 import { parseToken } from './parser'
 import { convertToAllFormats } from './converter'
