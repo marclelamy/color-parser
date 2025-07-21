@@ -2,9 +2,8 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import { ColorPanel } from '@/components/ColorPanel'
-import { parseColorLine } from '@/lib/color-parser'
-import { ColorTokenizer } from '@/lib/color-tokenizer'
-import { ColorToken } from '@/lib/color-patterns'
+import { buildColorObject } from '@/lib/build-color-object'
+import { ColorObject, RGBColor, HSLColor } from '@/lib/types'
 import { Button } from '@/components/ui/button'
 import { Plus, RotateCcw } from 'lucide-react'
 import { v4 as uuidv4 } from 'uuid'
@@ -15,8 +14,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 interface ColorPanelState {
     id: string
     rawInput: string
-    originalInput?: string // New: track original input for revert
-    tokens?: ColorToken[] // New: tokenizer results
+    originalInput?: string
+    colorObjects?: ColorObject[]
     showMore?: boolean
 }
 
@@ -30,44 +29,59 @@ const initialPanel: ColorPanelState = {
 export default function Home() {
     const [colorPanels, setColorPanels] = useState<ColorPanelState[]>([initialPanel])
 
-    const parseAndAddPanels = useCallback((input: string, replaceExisting: boolean = false) => {
-        const tokenizer = new ColorTokenizer(input)
-        const tokens = tokenizer.tokenize()
-        tokenizer.addPositionInfo()
+    const parseAndAddPanels = useCallback(async (input: string, replaceExisting: boolean = false) => {
+        try {
+            const colorObjects = await buildColorObject(input)
+            
+            console.log('parseAndAddPanels - color objects found:', colorObjects)
 
-        console.log('parseAndAddPanels - tokens found:', tokens)
+            if (colorObjects.length === 0) {
+                // No colors found, create a single panel with the input
+                const newPanel: ColorPanelState = {
+                    id: uuidv4(),
+                    rawInput: input,
+                    originalInput: input,
+                    colorObjects: []
+                }
 
-        if (tokens.length === 0) {
-            // No colors found, create a single panel with the input
-            const newPanel: ColorPanelState = {
+                if (replaceExisting) {
+                    setColorPanels([newPanel])
+                } else {
+                    setColorPanels(prev => [...prev, newPanel])
+                }
+                return
+            }
+
+            // Create panels for each color object found
+            const newPanels: ColorPanelState[] = colorObjects.map(colorObj => ({
+                id: uuidv4(),
+                rawInput: colorObj.token.raw,
+                originalInput: colorObj.token.raw,
+                colorObjects: [colorObj]
+            }))
+
+            console.log('parseAndAddPanels - creating panels:', newPanels)
+
+            if (replaceExisting) {
+                setColorPanels(newPanels)
+            } else {
+                setColorPanels(prev => [...prev, ...newPanels])
+            }
+        } catch (error) {
+            console.error('Failed to parse colors:', error)
+            // On error, create a panel with the input but no color objects
+            const errorPanel: ColorPanelState = {
                 id: uuidv4(),
                 rawInput: input,
-                originalInput: input, // Set original input
-                tokens: []
+                originalInput: input,
+                colorObjects: []
             }
 
             if (replaceExisting) {
-                setColorPanels([newPanel])
+                setColorPanels([errorPanel])
             } else {
-                setColorPanels(prev => [...prev, newPanel])
+                setColorPanels(prev => [...prev, errorPanel])
             }
-            return
-        }
-
-        // Create panels for each color token found
-        const newPanels: ColorPanelState[] = tokens.map(token => ({
-            id: uuidv4(),
-            rawInput: token.raw,
-            originalInput: token.raw, // Set original input
-            tokens: [token] // Each panel gets its specific token
-        }))
-
-        console.log('parseAndAddPanels - creating panels:', newPanels)
-
-        if (replaceExisting) {
-            setColorPanels(newPanels)
-        } else {
-            setColorPanels(prev => [...prev, ...newPanels])
         }
     }, [])
 
@@ -77,8 +91,7 @@ export default function Home() {
                 if (navigator.clipboard && navigator.clipboard.readText) {
                     const clipboardText = await navigator.clipboard.readText()
                     if (clipboardText.trim()) {
-                        // Use parseAndAddPanels to handle multiple colors
-                        parseAndAddPanels(clipboardText.trim(), true) // Replace existing
+                        await parseAndAddPanels(clipboardText.trim(), true)
                     }
                 }
             } catch (error) {
@@ -89,36 +102,42 @@ export default function Home() {
         readClipboard()
     }, [parseAndAddPanels])
 
-
     const handleInputChange = useCallback((id: string, newValue: string) => {
+        // First, immediately update the raw input
         setColorPanels(prev =>
-            prev.map(panel => {
-                if (panel.id === id) {
-                    // When the input is cleared, we don't want to parse it, but we want to keep the panel open
-                    if (newValue.trim() === '') {
-                        return {
-                            ...panel,
-                            rawInput: newValue,
-                            tokens: [], // Clear tokens when input is empty
-                        }
-                    }
-
-                    // For actual color values, re-tokenize
-                    const tokenizer = new ColorTokenizer(newValue)
-                    const newTokens = tokenizer.tokenize()
-                    tokenizer.addPositionInfo()
-
-                    return {
+            prev.map(panel => 
+                panel.id === id 
+                    ? {
                         ...panel,
                         rawInput: newValue,
-                        tokens: newTokens,
-                        // Preserve the original input for the revert functionality
                         originalInput: panel.originalInput || panel.rawInput,
+                        colorObjects: newValue.trim() === '' ? [] : panel.colorObjects
                     }
-                }
-                return panel
-            })
+                    : panel
+            )
         )
+
+        // Then handle async parsing separately
+        if (newValue.trim() !== '') {
+            buildColorObject(newValue).then(colorObjects => {
+                setColorPanels(currentPanels =>
+                    currentPanels.map(currentPanel =>
+                        currentPanel.id === id
+                            ? { ...currentPanel, colorObjects }
+                            : currentPanel
+                    )
+                )
+            }).catch(error => {
+                console.error('Failed to parse color:', error)
+                setColorPanels(currentPanels =>
+                    currentPanels.map(currentPanel =>
+                        currentPanel.id === id
+                            ? { ...currentPanel, colorObjects: [] }
+                            : currentPanel
+                    )
+                )
+            })
+        }
     }, [])
 
     const handleRevertPanel = useCallback((id: string) => {
@@ -137,7 +156,7 @@ export default function Home() {
             id: uuidv4(),
             rawInput: '',
             originalInput: '',
-            tokens: []
+            colorObjects: []
         }
         setColorPanels((currentPanels) => [...currentPanels, newPanel])
     }, [])
@@ -164,35 +183,11 @@ export default function Home() {
             </div>
             <div className="flex flex-row flex-grow min-h-screen w-full">
                 {colorPanels.map((panel) => {
-                    // Fallback to originalInput if rawInput is empty to keep the panel displayed
-                    const displayInput = panel.rawInput.trim() === '' ? panel.originalInput : panel.rawInput
-                    const parsedColor = { ...parseColorLine(displayInput || ''), id: panel.id }
+                    // Use the first color object if available
+                    const colorObject = panel.colorObjects?.[0]
                     
-                    if (!parsedColor.color) {
-                        // If parsing fails (e.g., empty input), still render a shell or a placeholder
-                        // For now, we'll keep it visible if there's an original value
-                        if (!panel.originalInput) return null
-
-                        const originalParsed = { ...parseColorLine(panel.originalInput), id: panel.id }
-                        return (
-                            <div
-                                key={panel.id}
-                                className="flex-grow min-w-[300px]"
-                                style={{ width: `${100 / colorPanels.length}%` }}
-                            >
-                                <ColorPanel
-                                    id={panel.id}
-                                    rawInput={panel.rawInput} // Show the empty input
-                                    originalInput={panel.originalInput}
-                                    parsedColor={originalParsed} // Use last valid color
-                                    tokens={[]} // No tokens for empty input
-                                    showMore={panel.showMore || false}
-                                    onShowMoreToggle={handleShowMoreToggle}
-                                    onInputChange={handleInputChange}
-                                    onRevert={handleRevertPanel}
-                                />
-                            </div>
-                        )
+                    if (!colorObject && !panel.originalInput) {
+                        return null
                     }
 
                     return (
@@ -201,22 +196,23 @@ export default function Home() {
                             className="flex-grow min-w-[300px]"
                             style={{ width: `${100 / colorPanels.length}%` }}
                         >
-                            <ColorPanel
-                                id={panel.id}
-                                rawInput={panel.rawInput}
-                                originalInput={panel.originalInput}
-                                parsedColor={{ ...parsedColor, id: panel.id }}
-                                tokens={panel.tokens?.length ? panel.tokens : new ColorTokenizer(panel.rawInput).tokenize()} // Pass tokenizer results
-                                showMore={panel.showMore || false}
-                                onShowMoreToggle={handleShowMoreToggle}
-                                onInputChange={handleInputChange}
-                                onRevert={handleRevertPanel}
-                            />
+                                                            <ColorPanel
+                                    id={panel.id}
+                                    rawInput={panel.rawInput}
+                                    originalInput={panel.originalInput}
+                                    parsedColor={colorObject?.parsedColor}
+                                    tokens={colorObject ? [colorObject.token] : []}
+                                    convertedColors={colorObject?.convertedColors}
+                                    showMore={panel.showMore || false}
+                                    onShowMoreToggle={handleShowMoreToggle}
+                                    onInputChange={handleInputChange}
+                                    onRevert={handleRevertPanel}
+                                />
                         </div>
                     )
                 })}
             </div>
-            <footer className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-10 text-sm text-white mix-blend-difference font-semibold">
+            <footer className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-10 text-sm text-white mix-blend-difference">
                 Developed by{' '}
                 <a 
                     href="https://marclamy.com" 
@@ -224,7 +220,7 @@ export default function Home() {
                     rel="noopener noreferrer"
                     className="underline"
                 >
-                    Marc Lamy
+                    Marc
                 </a>
                 . Help improve it on{' '}
                 <a 
@@ -235,7 +231,7 @@ export default function Home() {
                 >
                     GitHub
                 </a>
-                !
+                .
             </footer>
             <div className="fixed bottom-4 right-4 z-10">
                 <ExportColorsDialog colorPanels={colorPanels} />
@@ -243,31 +239,35 @@ export default function Home() {
         </main>
     )
 }
+
 function ExportColorsDialog({ colorPanels }: { colorPanels: ColorPanelState[] }) {
     const [format, setFormat] = useState("rgba")
     const [open, setOpen] = useState(false)
 
     const handleExport = () => {
         const colors = colorPanels.map(panel => {
-            const parsed = parseColorLine(panel.rawInput)
-            if (!parsed.color) return null
+            const colorObject = panel.colorObjects?.[0]
+            if (!colorObject) return null
+            
+            const convertedColors = colorObject.convertedColors
             
             switch (format) {
                 case 'rgba':
-                    return parsed.color.toRgbaString()
+                    const rgb = convertedColors.rgb as RGBColor
+                    return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${colorObject.parsedColor.alpha || 1})`
                 case 'hsla':
-                    // @ts-expect-error - toHslaString is not implemented yet
-                    return parsed.color.toHslaString()
+                    const hsl = convertedColors.hsl as HSLColor
+                    return `hsla(${hsl.h}, ${hsl.s}%, ${hsl.l}%, ${colorObject.parsedColor.alpha || 1})`
                 case 'hex':
-                    return parsed.color.toHex()
+                    return convertedColors.hex
                 default:
-                    return parsed.color.toRgbaString()
+                    const defaultRgb = convertedColors.rgb as RGBColor
+                    return `rgba(${defaultRgb.r}, ${defaultRgb.g}, ${defaultRgb.b}, ${colorObject.parsedColor.alpha || 1})`
             }
         }).filter(Boolean)
 
         const json = JSON.stringify(colors, null, 2)
         navigator.clipboard.writeText(json)
-        // You can also trigger a download here
         setOpen(false)
     }
 

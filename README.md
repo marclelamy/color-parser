@@ -12,8 +12,12 @@ A powerful color parsing tool that helps you instantly analyze, convert, and man
 
 ## Usage
 
-Simply paste any block of text (like CSS, Tailwind config, or just a list of colors) into the application. The tool will parse it and display all found colors. You can then inspect, modify, and export them.
+Simply paste any block of text (like a list of Hex/rgb/hsl/..., CSS, Tailwind config, or just a list of colors) into the input. The tool will parse it and display all found colors. You can then inspect, modify, and export them.
 
 ## Roadmap 
-- Support for oklch which doesn't work in the input
+- Support for oklch and other formats missing
 - make mobile responsive (display as flex col rather than row the color panels)
+- round-trip color conversion
+- add a button for "my string didn't work" with string issue + message or the user - rate limit the form 
+- the export needs more output types
+- [idea] - add option to change layout to grid of color and on hover block scales 2x with drop shadow and shows more details than on the unscaled

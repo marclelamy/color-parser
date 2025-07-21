@@ -27,8 +27,8 @@ export const COLOR_PATTERNS = {
     // Color function patterns
     colorFunction: /color\s*\(\s*([^)]+)\s*\)/gi,
 
-    // CSS custom properties (--variable: value;)
-    cssVariable: /--[\w-]+\s*:\s*([^;}\n]+)/gi,
+    // CSS custom properties (--variable: value)
+    cssVariable: /--[\w-]+\s*:\s*([^}\n]+)/gi,
 
     // Named colors (comprehensive list)
     named: /\b(red|blue|green|yellow|orange|purple|pink|brown|black|white|gray|grey|crimson|darkblue|lightgreen|gold|magenta|cyan|lime|navy|maroon|teal|transparent|currentColor|inherit|initial|unset|aliceblue|antiquewhite|aqua|aquamarine|azure|beige|bisque|blanchedalmond|blueviolet|burlywood|cadetblue|chartreuse|chocolate|coral|cornflowerblue|cornsilk|darkgoldenrod|darkcyan|darkgray|darkgreen|darkgrey|darkkhaki|darkmagenta|darkolivegreen|darkorange|darkorchid|darkred|darksalmon|darkseagreen|darkslateblue|darkslategray|darkslategrey|darkturquoise|darkviolet|deeppink|deepskyblue|dimgray|dimgrey|dodgerblue|firebrick|floralwhite|forestgreen|fuchsia|gainsboro|ghostwhite|goldenrod|greenyellow|honeydew|hotpink|indianred|indigo|ivory|khaki|lavender|lavenderblush|lawngreen|lemonchiffon|lightblue|lightcoral|lightcyan|lightgoldenrodyellow|lightgray|lightgrey|lightpink|lightsalmon|lightseagreen|lightskyblue|lightslategray|lightslategrey|lightsteelblue|lightyellow|limegreen|linen|mediumaquamarine|mediumblue|mediumorchid|mediumpurple|mediumseagreen|mediumslateblue|mediumspringgreen|mediumturquoise|mediumvioletred|midnightblue|mintcream|mistyrose|moccasin|navajowhite|oldlace|olive|olivedrab|orangered|orchid|palegoldenrod|palegreen|paleturquoise|palevioletred|papayawhip|peachpuff|peru|plum|powderblue|rosybrown|royalblue|saddlebrown|salmon|sandybrown|seagreen|seashell|sienna|silver|skyblue|slateblue|slategray|slategrey|snow|springgreen|steelblue|tan|thistle|tomato|turquoise|violet|wheat|whitesmoke|yellowgreen)\b/gi,
@@ -50,7 +50,7 @@ export const COLOR_PATTERNS = {
 
     // Number values
     number: /(\d+(?:\.\d+)?)/g
-} as const;
+} as const
 
 // Helper patterns for parsing components
 export const COMPONENT_PATTERNS = {
@@ -70,17 +70,21 @@ export const COMPONENT_PATTERNS = {
     numberValue: /^([+-]?\d+(?:\.\d+)?)$/,
 
     // CSS property extraction
-    cssProperty: /([a-zA-Z-]+)\s*:\s*([^;{}]+)/g,
+    cssProperty: /([a-zA-Z-]+)\s*:\s*([^{}]+)/g,
 
     // Color stop in gradients
     colorStop: /(#[0-9a-fA-F]{3,8}|rgba?\([^)]+\)|hsla?\([^)]+\)|oklch\([^)]+\)|[a-zA-Z]+)\s*(\d+%?)?/gi
-} as const;
+} as const
 
 // Color space identifiers for color() function
 export const COLOR_SPACES = [
     'srgb', 'srgb-linear', 'display-p3', 'a98-rgb', 'prophoto-rgb', 'rec2020',
     'xyz', 'xyz-d50', 'xyz-d65'
-] as const;
+] as const
+
+
+
+
 
 // Named color list for validation
 export const NAMED_COLORS = new Set([
@@ -110,35 +114,4 @@ export const NAMED_COLORS = new Set([
     'violet', 'wheat', 'white', 'whitesmoke', 'yellow', 'yellowgreen',
     // CSS keywords
     'transparent', 'currentcolor', 'inherit', 'initial', 'unset'
-]);
-
-// Token types for the tokenizer
-export type TokenType =
-    | 'hex'
-    | 'rgb'
-    | 'hsl'
-    | 'oklch'
-    | 'cmyk'
-    | 'lab'
-    | 'lch'
-    | 'hwb'
-    | 'color-function'
-    | 'named'
-    | 'css-variable'
-    | 'calc'
-    | 'css-var'
-    | 'unwrapped';
-
-export interface ColorToken {
-    type: TokenType;
-    value: string;
-    raw: string;
-    start: number;
-    end: number;
-    line?: number;
-    column?: number;
-    context?: {
-        property?: string;
-        name?: string;
-    };
-} 
+])

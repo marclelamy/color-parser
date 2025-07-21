@@ -1,13 +1,10 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
-import type { ParsedColor } from '@/lib/color-parser'
-import type { ColorToken } from '@/lib/color-patterns'
+import type { ColorType, Color, RGBColor, HSLColor, CMYKColor, ParsedColor, Token } from '@/lib/types'
 import {
     Card,
     CardContent,
-    CardHeader,
-    CardTitle,
 } from '@/components/ui/card'
 import { ColorPicker } from '@/components/ui/color-picker'
 import { Button } from './ui/button'
@@ -16,25 +13,27 @@ import { ChevronDown } from 'lucide-react'
 interface ColorPanelProps {
     id: string
     rawInput: string
-    originalInput?: string // New: original input for revert
-    parsedColor: ParsedColor
-    tokens?: ColorToken[] // New: tokenizer results
+    originalInput?: string
+    parsedColor?: ParsedColor
+    tokens?: Token[]
+    convertedColors?: Record<ColorType, Color>
     showMore: boolean
     onShowMoreToggle: (id: string) => void
     onInputChange: (id: string, value: string) => void
-    onRevert?: (id: string) => void // New: revert callback
+    onRevert?: (id: string) => void
 }
 
 export function ColorPanel({
     id,
     rawInput,
-    originalInput, // New: original input
+    originalInput,
     parsedColor,
-    tokens = [], // New: tokenizer results with default
+    tokens = [],
+    convertedColors,
     showMore,
     onShowMoreToggle,
     onInputChange,
-    onRevert, // New: revert callback
+    onRevert,
 }: ColorPanelProps) {
     const [copySuccess, setCopySuccess] = useState('')
     const [showColorPicker, setShowColorPicker] = useState(false)
@@ -72,13 +71,48 @@ export function ColorPanel({
         }
     }
 
-    const { name, color } = parsedColor
-    if (!color) return null
+    // Create color methods interface for the new system
+    interface ColorMethods {
+        toRgbString: () => string
+        toRgbaString: () => string
+        toHex: () => string
+        toHsl: () => HSLColor
+        toRgb: () => RGBColor
+        toCmyk: () => CMYKColor
+        toOklch: () => { l: number; c: number; h: number }
+        isLight: () => boolean
+    }
 
-    const isTransparent = color.rgba.a < 1
+    if (!convertedColors || !parsedColor) {
+        return null
+    }
 
-    // When the color is opaque, we just set the background color.
-    // When it's transparent, we show a checkerboard pattern behind a color overlay.
+    const alpha = parsedColor.alpha || 1
+    const isTransparent = alpha < 1
+    const rgb = convertedColors.rgb as RGBColor
+    const hsl = convertedColors.hsl as HSLColor
+    const cmyk = convertedColors.cmyk as CMYKColor
+    const hex = convertedColors.hex as string
+    
+    // Create a color object with proper methods
+    const color: ColorMethods = {
+        toRgbString: () => `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`,
+        toRgbaString: () => `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`,
+        toHex: () => hex,
+        toHsl: () => hsl,
+        toRgb: () => rgb,
+        toCmyk: () => cmyk,
+        toOklch: () => ({ l: 0.5, c: 0.5, h: 180 }), // Placeholder for now
+        isLight: () => {
+            // Calculate perceived brightness using standard formula
+            const brightness = (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000
+            return brightness > 128
+        }
+    }
+    
+    const textColorClass = color.isLight() ? 'text-black' : 'text-white'
+
+    // Panel styling
     const panelStyle: React.CSSProperties = !isTransparent
         ? { backgroundColor: color.toRgbString() }
         : {
@@ -87,30 +121,28 @@ export function ColorPanel({
               backgroundRepeat: 'repeat',
           }
 
-    const textColorClass = color && color.isLight() ? 'text-black' : 'text-white'
-
-    const formatHslString = (c: ParsedColor['color']): string => {
+    const formatHslString = (c: ColorMethods | null): string => {
         if (!c) return '-'
         const hsl = c.toHsl()
         return `hsl(${hsl.h.toFixed(0)}, ${hsl.s.toFixed(0)}%, ${hsl.l.toFixed(
             0
         )}%)`
     }
-    const formatRgbString = (c: ParsedColor['color']): string => {
+    const formatRgbString = (c: ColorMethods | null): string => {
         if (!c) return '-'
         const rgb = c.toRgb()
         return `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`
     }
-    const formatHexString = (c: ParsedColor['color']): string =>
+    const formatHexString = (c: ColorMethods | null): string =>
         c ? c.toHex() : '-'
     
-    const formatCmykString = (c: ParsedColor['color']): string => {
+    const formatCmykString = (c: ColorMethods | null): string => {
         if (!c) return '-'
         const cmyk = c.toCmyk()
         return `cmyk(${cmyk.c.toFixed(0)}%, ${cmyk.m.toFixed(0)}%, ${cmyk.y.toFixed(0)}%, ${cmyk.k.toFixed(0)}%)`
     }
 
-    const formatOklchString = (c: ParsedColor['color']): string => {
+    const formatOklchString = (c: ColorMethods | null): string => {
         if (!c) return '-'
         const oklch = c.toOklch()
         return `oklch(${oklch.l.toFixed(2)}, ${oklch.c.toFixed(2)}, ${oklch.h.toFixed(2)})`
@@ -187,13 +219,7 @@ export function ColorPanel({
                     </div>
                 )}
             </div>
-            {name && (
-                <CardHeader className=''>
-                    <CardTitle className={textColorClass}>
-                        {name}
-                    </CardTitle>
-                </CardHeader>
-            )}
+
             <CardContent className='px-0'>
                 <div className={`space-y-1 font-mono text-xs ${textColorClass}`}>
                     <div>
@@ -259,28 +285,24 @@ export function ColorPanel({
                         </div>
                     )}
                     
-                    {/* New: Display tokenizer results */}
+                    {/* Display tokenizer results */}
                     {tokens && tokens.length > 0 && (
                         <div className="mt-4 pt-2 border-t border-current/20">
                             <div className="text-xs font-bold mb-2">
                                 🔍 Tokenizer ({tokens.length})
                             </div>
                             {tokens.map((token, index) => (
-                                <div key={index} className="text-xs mb-1">
+                                <div key={token.id || index} className="text-xs mb-1">
                                     <span className="opacity-70">
                                         [{token.type}]
                                     </span>{' '}
                                     {token.raw}
-                                    {token.context?.name && (
-                                        <div className="ml-2 opacity-60">
-                                            → {token.context.name}
-                                        </div>
-                                    )}
-                                    {token.context?.property && (
-                                        <div className="ml-2 opacity-60">
-                                            in {token.context.property}
-                                        </div>
-                                    )}
+                                    <div className="ml-2 opacity-60">
+                                        Position: {token.startPosition}-{token.endPosition}
+                                    </div>
+                                    <div className="ml-2 opacity-60">
+                                        Line: {token.line}
+                                    </div>
                                 </div>
                             ))}
                         </div>
