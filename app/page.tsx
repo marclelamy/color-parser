@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { ColorPanel } from '@/components/ColorPanel'
 import { buildColorObject } from '@/lib/build-color-object'
 import { ColorObject, RGBColor, HSLColor } from '@/lib/types'
@@ -32,6 +32,7 @@ const initialPanel: ColorPanelState = {
 export default function Home() {
     const [colorPanels, setColorPanels] = useState<ColorPanelState[]>([initialPanel])
     const [isReadingClipboard, setIsReadingClipboard] = useState(true)
+    const panelsContainerRef = useRef<HTMLDivElement>(null)
 
     // Parse the initial panel's color on mount
     useEffect(() => {
@@ -45,6 +46,15 @@ export default function Home() {
         }
         parseInitialPanel()
     }, [])
+
+    useEffect(() => {
+        if (panelsContainerRef.current) {
+            panelsContainerRef.current.scrollTo({
+                left: panelsContainerRef.current.scrollWidth,
+                behavior: 'smooth'
+            })
+        }
+    }, [colorPanels.length])
 
     const parseAndAddPanels = useCallback(async (input: string, replaceExisting: boolean = false) => {
         try {
@@ -201,8 +211,10 @@ export default function Home() {
             originalInput: '#010f1d',
             colorObjects: []
         }
-        setColorPanels((currentPanels) => [...currentPanels, newPanel])
-        
+
+        // The useEffect watching colorPanels.length will handle scrolling
+        setColorPanels(currentPanels => [...currentPanels, newPanel])
+
         // Parse the default color for the new panel
         buildColorObject('#010f1d').then(colorObjects => {
             setColorPanels(currentPanels =>
@@ -242,7 +254,10 @@ export default function Home() {
                     <RotateCcw className="h-4 w-4" />
                 </Button>
             </div>
-            <div className="flex flex-row flex-grow min-h-screen w-full">
+            <div
+                ref={panelsContainerRef}
+                className="flex flex-row flex-grow min-h-screen w-full overflow-x-auto"
+            >
                 {colorPanels.map((panel) => {
                     // Use current color object if available, fallback to last valid color for display
                     const colorObject = panel.colorObjects?.[0] || panel.lastValidColorObjects?.[0]
